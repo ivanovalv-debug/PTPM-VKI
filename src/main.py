@@ -1,6 +1,6 @@
 import logging
-from logger import Logger
-from triangle import TriangleAnalyzer
+from src.logger import Logger
+from src.triangle import TriangleAnalyzer
 
 
 if __name__ == "__main__":
