@@ -2,22 +2,27 @@ from bs4 import BeautifulSoup
 from src.models import Comment
 from src.database import DatabaseRepository
 
+
 class ForumParser:
     @staticmethod
     def parse_page(html_content: str) -> list[Comment]:
         soup = BeautifulSoup(html_content, 'lxml')
         comments = []
         
-        for post in soup.find_all("div", class_="post"):
-            cid = int(post.get("data-id", 0))
-            author_tag = post.find("span", class_="author")
-            content_tag = post.find("div", class_="content")
+        
+        for post_container in soup.find_all("div", class_="postContainer"):
+            full_id = post_container.get("id", "")
+            cid = int(full_id.replace("pc", "")) if full_id.startswith("pc") else 0
             
-            if author_tag and content_tag:
-                author = author_tag.get_text(strip=True)
-                text = content_tag.decode_contents() 
+            name_tag = post_container.find("span", class_="name")
+            author = name_tag.get_text(strip=True) if name_tag else "Anonymous"
+           
+            msg_tag = post_container.find("blockquote", class_="postMessage")
+            text = msg_tag.decode_contents() if msg_tag else ""
+            
+            if cid > 0 and text:
                 comments.append(Comment(cid, author, text))
-            
+                
         return comments
 
     @staticmethod
