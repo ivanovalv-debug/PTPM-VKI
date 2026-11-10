@@ -1,33 +1,37 @@
-import os
+from src.loader import Loader
 from src.parser import ForumParser
 from src.database import DatabaseRepository
-from config import DB_PATH
-
-FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "tests", "fixtures", "page.html")
+from config import TARGET_URL, DB_PATH
 
 
 def main():
-    print("Запуск парсера форума (локальный режим)...")
+    print("🚀 Запуск парсера форума (режим сети)...")
    
-    print(f"Загрузка страницы из: {FIXTURE_PATH}")
-    with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
-        html_content = f.read()
-    print("Страница успешно загружена!")
+    print(f"Загрузка страницы: {TARGET_URL}")
+    try:
+        html_content = Loader.load(TARGET_URL)
+        print("✅ Страница успешно загружена!")
+    except Exception as e:
+        print(f"❌ Ошибка загрузки: {e}")
+        return
     
-    print("Извлечение комментариев...")
+    print("\nИзвлечение комментариев...")
     comments = ForumParser.parse_page(html_content)
     print(f"Найдено комментариев: {len(comments)}")
     
-    for c in comments:
-        print(f"  - [{c.comment_id}] {c.name}: {c.message[:50]}...")
-    
-    print(f"\nСохранение в БД ({DB_PATH})...")
+    if comments:
+        print("\nПервые 5 комментариев:")
+        for c in comments[:5]:
+            msg_preview = c.message[:60].replace('\n', ' ')
+            print(f"  - [{c.comment_id}] {c.name}: {msg_preview}...")
+  
+    print(f"\n💾 Сохранение в БД ({DB_PATH})...")
     repo = DatabaseRepository(DB_PATH)
     ForumParser.save_to_db(comments, repo)
     
-    saved = repo.get_by_name("Mila")
-    print(f"Проверка: найдено записей для Mila: {len(saved)}")
-    print("Готово!")
+    saved_count = len(repo.get_by_name("Anonymous"))
+    print(f"✅ Проверка: найдено записей для Anonymous: {saved_count}")
+    print("\nГотово!")
 
 
 if __name__ == "__main__":
