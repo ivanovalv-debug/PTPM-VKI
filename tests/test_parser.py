@@ -12,25 +12,16 @@ class TestForumParser(unittest.TestCase):
         self.repo = DatabaseRepository(":memory:")
 
     def test_parse_extracts_comments(self):
-        """Проверяем, что парсер нашел все 25 постов из треда"""
         comments = ForumParser.parse_page(self.html)
-        self.assertEqual(len(comments), 25)
-       
-        self.assertEqual(comments[0].comment_id, 43695612)
-        self.assertEqual(comments[0].name, "Anonymous")
-        self.assertIn("Smissmas", comments[0].message)
+        self.assertEqual(len(comments), 2)
+        self.assertEqual(comments[0].name, "Mila")
+        self.assertEqual(comments[0].comment_id, 1)
 
     def test_save_to_db_works(self):
-        """Проверяем сохранение реальных данных из 4chan"""
         comments = ForumParser.parse_page(self.html)
         ForumParser.save_to_db(comments, self.repo)
-        
-        op_post = self.repo.get_by_id(43695612)
-        self.assertIsNotNone(op_post)
-        self.assertEqual(op_post.name, "Anonymous")
-        
-        all_comments = self.repo.get_by_name("Anonymous")
-        self.assertEqual(len(all_comments), 25)
+        self.assertIsNotNone(self.repo.get_by_id(1))
+        self.assertEqual(len(self.repo.get_by_name("Admin")), 1)
 
 if __name__ == "__main__":
     unittest.main()

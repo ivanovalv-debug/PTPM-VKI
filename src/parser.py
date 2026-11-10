@@ -1,27 +1,30 @@
-import sys, os, unittest
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from src.parser import ForumParser
+from bs4 import BeautifulSoup
+from src.models import Comment
 from src.database import DatabaseRepository
 
-FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "page.html")
 
-class TestForumParser(unittest.TestCase):
-    def setUp(self):
-        with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
-            self.html = f.read()
-        self.repo = DatabaseRepository(":memory:")
+class ForumParser:
+    @staticmethod
+    def parse_page(html_content: str) -> list[Comment]:
+        soup = BeautifulSoup(html_content, 'lxml')
+        comments = []
+        
+        for post_container in soup.find_all("div", class_="postContainer"):
+            full_id = post_container.get("id", "")
+            cid = int(full_id.replace("pc", "")) if full_id.startswith("pc") else 0
+           
+            name_tag = post_container.find("span", class_="name")
+            author = name_tag.get_text(strip=True) if name_tag else "Anonymous"
+            
+            msg_tag = post_container.find("blockquote", class_="postMessage")
+            text = msg_tag.decode_contents() if msg_tag else ""
+            
+            if cid > 0 and text:
+                comments.append(Comment(cid, author, text))
+                
+        return comments
 
-    def test_parse_extracts_comments(self):
-        comments = ForumParser.parse_page(self.html)
-        self.assertEqual(len(comments), 2)
-        self.assertEqual(comments[0].name, "Mila")
-        self.assertEqual(comments[0].comment_id, 1)
-
-    def test_save_to_db_works(self):
-        comments = ForumParser.parse_page(self.html)
-        ForumParser.save_to_db(comments, self.repo)
-        self.assertIsNotNone(self.repo.get_by_id(1))
-        self.assertEqual(len(self.repo.get_by_name("Admin")), 1)
-
-if __name__ == "__main__":
-    unittest.main()
+    @staticmethod
+    def save_to_db(comments: list[Comment], repository: DatabaseRepository):
+        for c in comments:
+            repository.add(c.comment_id, c.name, c.message)
