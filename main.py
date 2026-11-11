@@ -5,14 +5,14 @@ from config import TARGET_URL, DB_PATH
 
 
 def main():
-    print("🚀 Запуск парсера форума (режим сети)...")
+    print("Запуск парсера форума (режим сети)...")
    
     print(f"Загрузка страницы: {TARGET_URL}")
     try:
         html_content = Loader.load(TARGET_URL)
-        print("✅ Страница успешно загружена!")
+        print("Страница успешно загружена!")
     except Exception as e:
-        print(f"❌ Ошибка загрузки: {e}")
+        print(f"Ошибка загрузки: {e}")
         return
     
     print("\nИзвлечение комментариев...")
@@ -25,12 +25,12 @@ def main():
             msg_preview = c.message[:60].replace('\n', ' ')
             print(f"  - [{c.comment_id}] {c.name}: {msg_preview}...")
   
-    print(f"\n💾 Сохранение в БД ({DB_PATH})...")
+    print(f"\nСохранение в БД ({DB_PATH})...")
     repo = DatabaseRepository(DB_PATH)
     ForumParser.save_to_db(comments, repo)
     
     saved_count = len(repo.get_by_name("Anonymous"))
-    print(f"✅ Проверка: найдено записей для Anonymous: {saved_count}")
+    print(f"Проверка: найдено записей для Anonymous: {saved_count}")
     print("\nГотово!")
 
 
